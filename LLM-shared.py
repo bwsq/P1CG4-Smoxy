@@ -31,7 +31,7 @@ def analyze_http_traffic(http_request: str):
     return response.choices[0].message.content
 
 # Example HTTP Requests (Benign)
-sample_normal_get_reqeust = r"""
+sample_normal_get_request = r"""
 GET /about HTTP/1.1
 Host: example-website.com
 User-Agent: Mozilla/5.0
@@ -116,6 +116,6 @@ input_field=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA... (4096 bytes 
 """
 
 # Analyze the request [Change variable name according to request type]
-analysis_result = analyze_http_traffic(sample_normal_get_reqeust)
+analysis_result = analyze_http_traffic(sample_normal_get_request)
 print("\n=== LLM Analysis ===\n")
 print(analysis_result)
