@@ -2,9 +2,9 @@
 
 Current code in Jonathan Branch
 
-Step 1 : Create a folder and virtual environment venv
-Step 2 : Place all the files and folder in
-Step 3 : pip install all missing dependencies
+Step 1 : Create a folder and virtual environment venv \n
+Step 2 : Place all the files and folder in \n
+Step 3 : pip install all missing dependencies \n
 
 App.py is the entry file, run that.
 mitmproxy and flask both uses ports, they can be changed in the app.py under mitm_port and flask_port.
