@@ -10,7 +10,7 @@ INFO<br/>
 App.py controls launches other components and handles flask/control panel<br/>
 Broxy.py handles browser<br/>
 Proxy.py used by mitmproxy to alter request and response behaviour<br/>
-config.py contains global variables and help access resume.txt and intercept.txt which acts as a form of variable as we can't pass any variables into mitmproxy once it's running)<br/>
+config.py contains global variables and help access (resume.txt , intercept.txt ) which acts as a form of variable as we can't pass any variables into mitmproxy once it's running)<br/>
 
 <br/>
 App.py is the entry file, run that.<br/>
