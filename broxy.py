@@ -1,11 +1,10 @@
 from playwright.sync_api import sync_playwright
 
 # Proxy settings
-# PROXY_SERVER = "http://localhost:8080"  # Replace with your proxy address
-PROXY_SERVER = "http://0.0.0.0:8080"  # Replace with your proxy address
+PROXY_SERVER = "http://0.0.0.0:9090"  # Replace with your proxy address
 
 # Default Startup Website
-TARGET_URL = "https://duckduckgo.com/"
+TARGET_URL = "https://example.com/"
 
 DOWNLOAD_PATH = "/Users/jonathantok/Downloads/"
 
@@ -45,7 +44,6 @@ def launch_broxy():
 
         except Exception as e:
             print(f"Error navigating to {TARGET_URL}: {e}")
-
 
 
 if __name__ == "__main__":

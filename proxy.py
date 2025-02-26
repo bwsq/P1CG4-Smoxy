@@ -1,156 +1,158 @@
+import time
+
 from mitmproxy import http, ctx
 import json
 import sqlite3  # Import SQLite
-
-# Global variables
-DATABASE_FILE = "traffic.db"  # Name of database file
-interception_enabled = False
-traffic_controller_instance = None  # Global variable
-
-
-def toggle_interception():
-    global interception_enabled
-    interception_enabled = not interception_enabled
-    print(f"interception_enabled current value -> {interception_enabled}")
-    state = "enabled" if interception_enabled else "disabled"
-    global traffic_controller_instance
-    if interception_enabled:
-        traffic_controller_instance.flow.resume()
-
-    return state
-
+from config import DATABASE_FILE,  set_resume_signal, get_interception_enabled, get_resume_signal, stringToBoolean
 
 class TrafficController:
     def __init__(self):
-        global traffic_controller_instance  # Declare as global
-        traffic_controller_instance = self
+        self.flow = None
+        self.conn = None
+        self.cursor = None
         # Initialize database connection
+        # try:
+        #     self.conn = sqlite3.connect(DATABASE_FILE)
+        #     self.cursor = self.conn.cursor()
+        # except sqlite3.Error as e:
+        #     print(f"Database error: {e}")
+
+    def saveToDB(self, flowtype, data, intercept):
+
         try:
             self.conn = sqlite3.connect(DATABASE_FILE)
             self.cursor = self.conn.cursor()
-            self.cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS traffic (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    flow_type TEXT NOT NULL,  -- 'request' or 'response'
-                    url TEXT NOT NULL,
-                    port TEXT NOT NULL,
-                    method TEXT NOT NULL,
-                    scheme TEXT,
-                    http_version TEXT,
-                    headers TEXT,
-                    content TEXT,
-                    trailers TEXT,
-                    data TEXT,
-                    is_modified INTEGER DEFAULT 0,  -- 0 for not modified, 1 for modified
-                    interception INTEGER DEFAULT 0, -- 0 for not intercepted, 1 intercepted
-                    flag TEXT
+            if flowtype == 'request':
+                self.cursor.execute(
+                    "INSERT INTO traffic (flow_type, url, port, method, scheme, http_version, headers, content, trailers, intercepted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (flowtype,
+                     self.flow.request.pretty_url,
+                     data['port'],
+                     data['method'],
+                     data['scheme'],
+                     data['http_version'],
+                     data['headers'],
+                     data['content'],
+                     data['trailers'],
+                     intercept
+                     )
                 )
-                """
-            )
-            self.conn.commit()
-        except sqlite3.Error as e:
-            print(f"Database error: {e}")
+            elif flowtype == 'response':
+                self.cursor.execute(
+                    "INSERT INTO traffic (flow_type, url, status_code, reason, http_version, headers, content, trailers, intercepted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (flowtype,
+                     data['url'],
+                     data['status_code'],
+                     data['reason'],
+                     data['http_version'],
+                     data['headers'],
+                     data['content'],
+                     data['trailers'],
+                     intercept
+                     )
+                )
 
-    def start(self):
-        print("TrafficController addon [start] triggered ") #debug
-        ctx.log.info(f"Proxy is listening on port {ctx.options.listen_port}")
+            self.flow.request.id = self.cursor.lastrowid
+            print(f" Save successful. Entry ID : {self.flow.request.id}")
+            self.conn.commit()
+            self.conn.close()
+            return 1  # success
+
+        except sqlite3.Error as e:
+            print("sqllite error in  request")  # debug
+            ctx.log.error(f"Database error during request: {e}")
+            return 0
 
     def request(self, flow: http.HTTPFlow) -> None:
-        print("TrafficController addon [request] triggered ") # debug
-        print(f"interception state is {interception_enabled}") # debug
-        if interception_enabled:
+        interception_enabled = stringToBoolean(get_interception_enabled())
+
+        self.flow = flow
+        print("\nTrafficController addon [request] triggered")  # debug
+        print(f"interception_enabled value is {interception_enabled}")  # debug
+
+        # print(f"flow.request.get_content() is : {flow.request.get_content()}")
+        # print(f"flow.request.get_textt() is : {flow.request.get_text()}")
+        # print(f"flow.request.text is : {flow.request.text}")
+        # print(f"flow.request.headers is : {json.dumps(dict(flow.request.headers))}")
+        # print(f"server connection is {flow.server_conn.address[0]}")
+        request_data = {
+            "url": flow.request.pretty_url,
+            "port": flow.request.port,
+            "method": flow.request.method,
+            "scheme": flow.request.scheme,
+            "http_version": flow.request.http_version,
+            "headers": json.dumps(dict(flow.request.headers)),
+            "content": flow.request.get_content(),
+            # "content": flow.request.get_content().decode('utf-8') if flow.request.get_content() else '',
+            "trailers": str(flow.request.trailers)
+        }
+        # request_data_string = json.dumps(request_data, indent=4)
+
+        # Ignore Chrome auto calls to optimizationguide and safebrowsing
+        if "optimizationguide-pa.googleapis.com" in flow.request.url:
+            flow.resume()
+            print("request to optimizationguide-pa.googleapis.com skipped")
+        elif 'safebrowsingohttpgateway.googleapis.com' in flow.request.url:
+            flow.resume()
+            print("request to safebrowsingohttpgateway.googleapis.com skipped")
+        elif interception_enabled:
+            set_resume_signal(False);
+            print(f"Request Intercepted, interception_enabled is {interception_enabled}")  # debug
+            self.saveToDB(flowtype="request", data=request_data, intercept=1)
             flow.intercept()
-            # print(f"flow.request.get_content() is : {flow.request.get_content()}")
-            print(f"flow.request.get_textt() is : {flow.request.get_text()}")
-            print(f"flow.request.text is : {flow.request.text}")
-            print(f"flow.request.headers is : {json.dumps(dict(flow.request.headers))}")
-
-            request_data = {
-                "url": flow.request.pretty_url,
-                "port": flow.request.port,
-                "method": flow.request.method,
-                "scheme": flow.request.scheme,
-                "http_version": flow.request.http_version,
-                "headers": json.dumps(dict(flow.request.headers)),
-                "content": flow.request.get_content().decode('utf-8') if flow.request.get_content() else '',
-                "trailers": str(flow.request.trailers)
-            }
-            print(flow.request.method)  # debug
-            request_data_string = json.dumps(request_data, indent=4)
-
-            try:
-                print(request_data)
-                self.cursor.execute(
-                    "INSERT INTO traffic (flow_type, url, port, method, scheme, http_version, headers, content, trailers, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    ("request",
-                     flow.request.pretty_url,
-                     request_data['port'],
-                     request_data['method'],
-                     request_data['scheme'],
-                     request_data['http_version'],
-                     request_data['headers'],
-                     request_data['content'],
-                     request_data['trailers'],
-                     request_data_string)
-                )
-
-                print("trying to insert request into database")  # debug
-                flow.request.id = self.cursor.lastrowid
-                self.conn.commit()
-                # ctx.log.info(
-                #     f"Intercepted request to {flow.request.pretty_url} (ID: {flow.request.id})"
-                # )
-            except sqlite3.Error as e:
-                print("sqllite error in  request")  # debug
-                ctx.log.error(f"Database error during request: {e}")
+            self.waitForResumeSignal()
+            print(f"Request Resumed")  # debug
+            flow.resume()
+        else:
+            self.saveToDB(flowtype="request", data=request_data, intercept=0)
+            flow.resume()
 
     def response(self, flow: http.HTTPFlow) -> None:
-        print("TrafficController addon [response] triggered ") #debug
-        if interception_enabled:
+        interception_enabled = stringToBoolean(get_interception_enabled())
+        print("\nTrafficController addon [response] triggered ")  # debug
+        # print(f"flow.request.get_content() is : {flow.request.get_content()}")
+        # print(f"flow.request.get_text() is : {flow.request.get_text()}")
+        # print(f"flow.request.text is : {flow.request.text}")
+        # https: // example.com / favicon.ico
+
+        response_data = {
+            "url": flow.request.url,
+            "status_code": flow.response.status_code,
+            "reason": flow.response.reason,
+            "http_version": flow.response.http_version,
+            "headers": str(dict(flow.response.headers)),
+            "content": flow.response.get_content(),
+            # "content": flow.response.get_content().decode('utf-8') if flow.response.get_content() else '',
+            "trailers": str(flow.response.trailers),
+        }
+        # response_data_string = json.dumps(response_data, indent=4)
+        if "optimizationguide-pa.googleapis.com" in flow.request.url:
+            flow.resume()
+            print("response from optimizationguide-pa.googleapis.com skipped")
+        elif 'safebrowsingohttpgateway.googleapis.com' in flow.request.url:
+            flow.resume()
+            print("response from safebrowsingohttpgateway.googleapis.com skipped")
+        elif interception_enabled:
+            set_resume_signal(False)
+            print(f"Response Intercepted, interception_enabled is {interception_enabled}")  # debug
+            self.saveToDB(flowtype="response", data=response_data, intercept=1)
             flow.intercept()
-            # print(f"flow.request.get_content() is : {flow.request.get_content()}")
-            # print(f"flow.request.get_textt() is : {flow.request.get_text()}")
-            # print(f"flow.request.text is : {flow.request.text}")
+            self.waitForResumeSignal()
+            print(f"Request Resumed")  # debug
+            flow.resume()
+        else:
+            self.saveToDB(flowtype="response", data=response_data, intercept=0)
 
-            response_data = {
-                "url": flow.response.pretty_url,
-                "port": flow.response.port,
-                "method": flow.response.method,
-                "scheme": flow.response.scheme,
-                "http_version": flow.response.http_version,
-                "headers": str(dict(flow.response.headers)),
-                "content": flow.response.get_content().decode('utf-8') if flow.response.get_content() else '',
-                "trailers": str(flow.response.trailers),
-            }
-            print(flow.response.method)  # debug
-            response_data_string = json.dumps(response_data, indent=4)
 
-            try:
-                print(response_data)
-                self.cursor.execute(
-                    "INSERT INTO traffic (flow_type, url, port, method, scheme, http_version, headers, content, trailers, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    ("response",
-                     flow.request.pretty_url,
-                     response_data['port'],
-                     response_data['method'],
-                     response_data['scheme'],
-                     response_data['http_version'],
-                     response_data['headers'],
-                     response_data['content'],
-                     response_data['trailers'],
-                     response_data_string)
-                )
+    def waitForResumeSignal(self):
+        resume_signal = stringToBoolean(get_resume_signal())
+        while not resume_signal:  # wait for resume signal be changed
+            time.sleep(1)
+            resume_signal = stringToBoolean(get_resume_signal())
 
-                print("trying to insert request into database")  # debug
-                flow.request.id = self.cursor.lastrowid
-                self.conn.commit()
-                # ctx.log.info(
-                #     f"Intercepted request to {flow.request.pretty_url} (ID: {flow.request.id})"
-                # )
-            except sqlite3.Error as e:
-                print("sqllite error in  request")  # debug
-                ctx.log.error(f"Database error during request: {e}")
+        print("Resume Signal Toggled")  # debug
+        set_resume_signal(False)   # reset resume signal
+        return 0
 
 
 addons = [TrafficController()]

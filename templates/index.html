@@ -13,7 +13,7 @@
     <div class="top-row">
         <img id="logo" src="static/smoxy-logo.png" alt="smoxy-logo">
         <button id="open-browser">Open Browser</button>
-        <button id="intercept-traffic" class="intercept-disabled">Intercept Traffic [disabled]</button>
+        <button id="intercept-traffic" class="intercept-disabled">Intercept Traffic [{{ interception_enabled }}]</button>
         <p id="mitm_port">Mitm proxy running on Port <mark>{{ mitm_port }}</mark></p>
     </div>
 
@@ -72,9 +72,9 @@
             })
             .then(state => {
             // Update button appearance based on state
-                let text = "state is " + state
+                let text = "State is " + state
                 console.log(text)
-                if (state === "enabled") {
+                if (state === "Enabled") {
                     interceptButton.classList.remove("intercept-disabled");
                     interceptButton.classList.add("intercept-enabled");
                 } else {
