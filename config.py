@@ -3,6 +3,7 @@ TABLE = "traffic"  # Database filename
 DATABASE_FILE = f"{TABLE}.db"  # Database filename w .db extension
 mitm_port = "9090"  # MITM proxy
 flask_port = '5050'  # Flask control panel port
+flask_url = f'http://localhost:{flask_port}/'
 
 def toggle_interception():
     interception_enabled = stringToBoolean(get_interception_enabled())  # before change
@@ -56,8 +57,25 @@ def get_resume_signal():
             resume_signal = file.read()
     except Exception as e:
         print(f"An error occurred for get_resume_signal: {e}")
-
     return resume_signal
+
+
+def get_drop_signal():
+    try:
+        with open('drop.txt', 'r') as file:
+            drop_signal = file.read()
+    except Exception as e:
+        print(f"An error occurred for drop_signal: {e}")
+    return drop_signal
+
+
+def set_drop_signal(value):
+    try:
+        with open('drop.txt', 'w') as file:
+            value = str(value)
+            file.write(value)
+    except Exception as e:
+        print(f"An error occurred for drop_signal: {e}")
 
 
 def stringToBoolean(string):
