@@ -17,7 +17,6 @@
         <p id="mitm_port">Mitm proxy running on Port <mark>{{ mitm_port }}</mark></p>
     </div>
 
-
     <!-- Split Screen -->
     <div class="split-screen">
         <!-- Left Side: Controls and Packet Information -->
@@ -25,8 +24,8 @@
             <div class="button-row">
                 <button id="forward-button">Forward</button>
                 <button id="drop-button">Drop</button>
-            </div>
-            <textarea id="text-box" placeholder="Edit traffic data here..."></textarea>
+             </div>
+            <textarea id="content-box" placeholder="idling....">{{ information['type'] }}</textarea>
         </div>
 
         <!-- Right Side: AI Assistant -->
@@ -38,7 +37,14 @@
 
     <!-- JavaScript for functionality -->
     <script>
-        const mitm_port = "{{ mitm_port }}";
+        // NEED HELP HERE
+        // let information ="{{ information }}";
+        //
+        // if (information !== undefined && information !== null) {
+        //     const textBox = document.getElementById("content-box");
+        //     textBox.value = "{{ information['type'] }}";
+        //
+        // }
 
         document.getElementById("open-browser").addEventListener("click", function() {
             fetch("/open_browser", {
@@ -71,7 +77,7 @@
                 }
             })
             .then(state => {
-            // Update button appearance based on state
+                // Update button appearance based on state
                 let text = "State is " + state
                 console.log(text)
                 if (state === "Enabled") {
@@ -85,17 +91,43 @@
             })
             .catch(error => {
                 console.error("Error:", error);
-                // Handle error
             });
         });
 
+
         document.getElementById('forward-button').addEventListener('click', () => {
-            alert('Forward clicked!');
+            fetch("/forward", {
+                method: "GET",
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log("Forwarded successfully!");
+                } else {
+                    console.error("Forwarding failed.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
         });
 
         document.getElementById('drop-button').addEventListener('click', () => {
-            alert('Drop clicked!');
+            fetch("/drop", {
+                method: "GET",
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log("Dropped successfully!");
+                } else {
+                    console.error("Dropped failed.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
         });
+
+
     </script>
 </body>
 </html>
