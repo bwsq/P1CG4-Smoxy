@@ -1,5 +1,6 @@
 import os, sys, subprocess, sqlite3, time, ast, json, signal
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit
 from broxy import launch_broxy
 from bs4 import BeautifulSoup
 from config import (DATABASE_FILE, mitm_port, flask_port, toggle_interception,
@@ -7,6 +8,7 @@ from config import (DATABASE_FILE, mitm_port, flask_port, toggle_interception,
                     set_drop_signal)
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Run Proxy and Browser Python script
 if os.path.exists(DATABASE_FILE):
@@ -152,7 +154,8 @@ def incoming_flow():
     else:
         intercept_state = 'Disabled'
 
-    flow_type = request.args.get('type') if request else None
+    # flow_type = request.args.get('type') if request else None
+    flow_type = request.json.get('type')
 
     # Get ID corresponding to current intercepted traffic
     response = query_database("SELECT MAX(id) FROM traffic")
@@ -202,13 +205,13 @@ def incoming_flow():
     content_type = None
     for key in information['headers'].keys():
         if key.lower() == 'content-type':
-            content_type = information['headers'][
-                'content-type']  # must account for Content-Type and content-type in headers
+            content_type = information['headers']['content-type']  # must account for Content-Type and content-type in headers
             information['content-type'] = content_type
             print(content_type)
             break
 
     # Handles content  (if any)
+    content = None
     if content_type:
         data = query_database(f"SELECT content FROM traffic WHERE id = {id}")  # get content
         if data:
@@ -216,12 +219,20 @@ def incoming_flow():
         else:
             content = None
 
-    return render_template("index.html",
-                           mitm_port=mitm_port,
-                           interception_enabled=intercept_state,
-                           # information=information     # NEED HELP HERE
-                           # content = content
-                           )
+    if content:
+        information['content'] = content
+
+    print(information)
+
+    socketio.emit('info', information)
+
+    return jsonify({"message" : "Received"}), 200
+
+    # return render_template("index.html",
+    #                        mitm_port=mitm_port,
+    #                        interception_enabled=intercept_state,
+    #                        requestandheaders=jsonify(information or {"message": "No traffic yet"})
+    #                        )
 
 
 @app.route("/traffic/<int:traffic_id>", methods=['GET', 'POST'])
@@ -323,4 +334,4 @@ def decode_content(content_type, data):
 
 if __name__ == "__main__":
     start_processes()
-    app.run(host='0.0.0.0', port=flask_port, debug=True)
+    socketio.run(app, host='0.0.0.0', port=flask_port, debug=True, allow_unsafe_werkzeug=True )

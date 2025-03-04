@@ -127,8 +127,8 @@ class TrafficController:
             set_drop_signal(False);
             print(f"Request Intercepted, interception_enabled is {interception_enabled}")  # debug
             self.saveToDB(flowtype="request", data=request_data, intercept=1)
-
             flow.intercept()
+            self.callToFlask('response')
             self.waitForResumeSignal()
             print(f"Request Resumed")  # debug
             drop_signal = get_drop_signal()
@@ -174,6 +174,7 @@ class TrafficController:
             print(f"Response Intercepted, interception_enabled is {interception_enabled}")  # debug
             self.saveToDB(flowtype="response", data=response_data, intercept=1)
             flow.intercept()
+            self.callToFlask('response')
             self.waitForResumeSignal()
             print(f"Request Resumed")  # debug
             drop_signal = get_drop_signal()
@@ -206,14 +207,14 @@ class TrafficController:
         global flask_url
         url = f"{flask_url}/incoming-flow"  # Call to flask
         payload = {
-            "type": f"{type}"  # request or response
+            "type": type  # request or response
         }
         response = requests.post(url, json=payload)
         # Print the response from Flask
         if response.status_code == 200:
-            print(f"Success: {response.json()['message']}")
+            print(f"Success CallToFlask")
         else:
-            print(f"Error: {response.json()['message']}")
+            print(f"Error CallToFlask")
 
 
 addons = [TrafficController()]
