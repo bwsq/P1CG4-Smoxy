@@ -1,0 +1,101 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Top Row: Buttons */
+
+#logo {
+    max-height : 100px;
+    width: 120px;
+    align-self: flex-start;
+}
+
+#mitm_port {
+    align-self: flex-end;
+}
+
+.top-row {
+    background-color: #f0f0f0;
+    padding: 10px;
+    text-align: left;
+}
+
+.top-row button {
+    padding: 10px 20px;
+    margin: 0 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Split Screen Layout */
+.split-screen {
+    display: flex;
+    flex: 1;
+}
+
+/* Left Side: Text Box and Buttons */
+.left-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    background-color: #e0e0e0;
+}
+
+.button-row {
+    margin-bottom: 10px;
+}
+
+.button-row button {
+    padding: 10px 20px;
+    margin: 0 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#text-box {
+    height: 620px;
+    width:  auto; /*520px;*/
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    font-family: monospace;
+    border: 1px solid #ccc;
+    resize: none;
+}
+
+
+/* Right Side: Sample Text */
+.right-side {
+    flex: 1;
+    padding: 10px;
+    background-color: #f9f9f9;
+    overflow-y: auto;
+}
+
+#sample-text {
+    font-family: monospace;
+    font-size: 14px;
+    white-space: pre-wrap;
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+/* For Interception Buttons */
+.intercept-enabled {
+    font-weight: bold;
+    background-color: red; /* Color when interception is enabled */
+    color: white;
+}
+.intercept-disabled {
+    font-weight: bold;
+    background-color: blue; /* Color when interception is disabled */
+    color: white;
+}
