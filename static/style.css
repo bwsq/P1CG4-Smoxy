@@ -6,6 +6,8 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    background-color: #f0fdf4;
+    color: #1b5e20
 }
 
 /* Top Row: Buttons */
@@ -14,16 +16,24 @@ body {
     max-height : 100px;
     width: 120px;
     align-self: flex-start;
+    margin-right: 10px;
 }
 
 #mitm_port {
-    align-self: flex-end;
+    align-self: center;
+    margin-left: auto;
+    font-weight: bold;
+    color: #fff;
 }
 
 .top-row {
-    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: #1b5e20;
     padding: 10px;
-    text-align: left;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3)
 }
 
 .top-row button {
@@ -31,12 +41,31 @@ body {
     margin: 0 5px;
     font-size: 16px;
     cursor: pointer;
+    background-color: #66bb6a;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
 }
+
+.top-row button:hover{
+    background-color: #388e3c
+}
+
+h2{
+    margin-top: 0;
+    font-size: 18px;
+    color: #1b5e20;
+    border-bottom: 2px solide #81c784;
+    padding-bottom: 5px;
+}
+
 
 /* Split Screen Layout */
 .split-screen {
     display: flex;
     flex: 1;
+    height: calc(100vh - 60px); /* Adjust this to account for the top bar height */
 }
 
 /* Left Side: Text Box and Buttons */
@@ -44,8 +73,27 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 10px;
-    background-color: #e0e0e0;
+    padding: 15px;
+    background-color: #f1f8e9;
+    border-right: 2px solid #c8e6c9;
+    box-shadow: inset 0 2px 4pc rgba(0,0,0,0.1);
+    box-sizing: border-box;
+}
+
+button{
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #4caf50, #388e3c);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+button:hover{
+    background: linear-gradient(to bottom, #66bb6a, #43a047);
+    transform: translateY(-2px);
 }
 
 .button-row {
@@ -53,10 +101,18 @@ body {
 }
 
 .button-row button {
-    padding: 10px 20px;
-    margin: 0 5px;
-    font-size: 16px;
+    padding: 10px 16px;
+    font-size: 14px;
     cursor: pointer;
+    background: linear-gradient(to bottom, #81c784, #66bb6a);
+    border: none;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.button-row button:hover{
+    background: linear-gradient(to bottom, #66bb6a, #43a047);
+    transform: translateY(-2px)
 }
 
 #text-box {
@@ -66,36 +122,54 @@ body {
     padding: 10px;
     font-size: 14px;
     font-family: monospace;
-    border: 1px solid #ccc;
+    border: 1px solid #a5d6a7;
     resize: none;
+    border-radius: 5px;
+}
+
+#content-box{
+    flex:1;
+    padding: 10px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #81c784;
+    background-color: white;
+    resize: none;
+    border-radius: 5px;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+    height: 100%;
+    box-sizing: border-box;
 }
 
 
 /* Right Side: Sample Text */
 .right-side {
     flex: 1;
-    padding: 10px;
-    background-color: #f9f9f9;
+    padding: 15px;
+    background-color: #ffffff;
     overflow-y: auto;
+    box-sizing: border-box;
 }
 
 #sample-text {
     font-family: monospace;
     font-size: 14px;
     white-space: pre-wrap;
-    background-color: #fff;
+    background-color: #f9fff9;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #81c784;
+    border-radius: 5px;
+    height: calc(100% - 40px);
+    overflow-y: auto;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+    box-sizing: border-box;
 }
 
 /* For Interception Buttons */
 .intercept-enabled {
-    font-weight: bold;
-    background-color: red; /* Color when interception is enabled */
-    color: white;
+    background: linear-gradient(to bottom, #81c784, #66bb6a);
 }
 .intercept-disabled {
-    font-weight: bold;
-    background-color: blue; /* Color when interception is disabled */
-    color: white;
+    background: linear-gradient(to bottom, #ef5350, #d32f2f) /* Color when interception is disabled */
+
 }
