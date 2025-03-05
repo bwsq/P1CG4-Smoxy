@@ -14,5 +14,6 @@ config.py contains global variables and help access (resume.txt , intercept.txt 
 
 <br/>
 App.py is the entry file, run that.<br/>
-mitmproxy and flask both uses ports, they can be changed in the app.py under mitm_port and flask_port.<br/>
+mitmproxy and flask both uses ports, they can be changed in the config.py under mitm_port and flask_port.<br/>
+mitmproxy have their own Certificate from the Certificate Authority to help us not be flagged with invalid certs. You'll need to install it into browser or system (https://docs.mitmproxy.org/stable/concepts-certificates/).
 Feel free to ask moi for any issue
