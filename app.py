@@ -1,11 +1,15 @@
-import os, sys, subprocess, sqlite3, time, ast, json, signal
+import os, sys, subprocess, sqlite3, time, ast, json, signal, aiohttp, asyncio, openai
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
+from urllib.parse import parse_qs
+import main_rag
+from anytree import Node, RenderTree
+from urllib.parse import urlparse
 from broxy import launch_broxy
 from bs4 import BeautifulSoup
 from config import (DATABASE_FILE, mitm_port, flask_port, toggle_interception,
                     get_interception_enabled, stringToBoolean, set_resume_signal,
-                    set_drop_signal)
+                    set_drop_signal, get_modified, set_modified, nuke_modified)
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -78,6 +82,13 @@ def start_processes():
 
 
 def stop_processes():
+    # Stop the socket server if running
+    try:
+        socketio.stop()
+        print("Socket server stopped.")
+    except Exception as e:
+        print(f"Error stopping socket server: {e}")
+
     for proc in proc_list:
         try:
             proc.terminate()  # Try to terminate the process
@@ -129,9 +140,16 @@ def toggle_intercept():
     return state  # Return the state of the variable
 
 
-@app.route("/forward", methods=['GET'])
+@app.route("/forward", methods=['GET', 'POST'])
 def forward():
     print("Forward button pressed")
+    # Access specific headers
+    modified_status = request.headers.get('Modified')
+    nuke_modified()
+    if modified_status == 'Yes':
+        data = request.get_json()
+        set_modified(data)
+
     set_resume_signal('True')
     return "Forwarded"
 
@@ -195,7 +213,6 @@ def incoming_flow():
     # handle headers (need to be parsed in frontend)
     response = query_database(f"SELECT headers FROM traffic WHERE id = {id}")  # dictionary of headers
     information['headers'] = ast.literal_eval(response[0][0]) if response else None
-    print(information['headers'])
 
     # handles HTTP version (HTTP/2.0)
     response = query_database(f"SELECT http_version FROM traffic WHERE id = {id}")
@@ -204,10 +221,14 @@ def incoming_flow():
     # Handles content type (if any)
     content_type = None
     for key in information['headers'].keys():
-        if key.lower() == 'content-type':
-            content_type = information['headers']['content-type']  # must account for Content-Type and content-type in headers
+        if key == 'content-type':
+            content_type = information['headers'][
+                'content-type']  # must account for Content-Type and content-type in headers
+        elif key.lower() == 'Content-Type':
+            content_type = information['headers']['Content-Type']
+        if content_type:
             information['content-type'] = content_type
-            print(content_type)
+            # print(content_type)
             break
 
     # Handles content  (if any)
@@ -222,53 +243,55 @@ def incoming_flow():
     if content:
         information['content'] = content
 
-    print(information)
+    # print(information)
 
     socketio.emit('info', information)
 
-    return jsonify({"message" : "Received"}), 200
-
-    # return render_template("index.html",
-    #                        mitm_port=mitm_port,
-    #                        interception_enabled=intercept_state,
-    #                        requestandheaders=jsonify(information or {"message": "No traffic yet"})
-    #                        )
+    return jsonify({"message": "Received"}), 200
 
 
-@app.route("/traffic/<int:traffic_id>", methods=['GET', 'POST'])
-def view_traffic(traffic_id):
-    conn = sqlite3.connect(DATABASE_FILE)
-    cursor = conn.cursor()
+# Handling OpenAi API calls
+@app.route('/search', methods=['GET'])
+async def search():
+    global current_request_id
 
-    if request.method == 'POST':  # Edit submission
-        modified_data = request.form['traffic_data']
-        cursor.execute("UPDATE traffic SET data = ?, is_modified = 1 WHERE id = ?", (modified_data, traffic_id))
-        conn.commit()
+    query = request.args.get('query')
+    request_id = request.args.get('request_id')
 
-        # Create resume.txt to resume the flow
-        with open("resume.txt", "w") as f:
-            f.write("resume")  # can add other data if needed.
+    # Update the current request ID to the most recent one
+    current_request_id = request_id
+    print(f"Received request with ID {request_id} for query: {query}")
 
-        conn.close()
-        return "Traffic modified and resumed"
+    # Perform the async fetch operation
+    result = await fetch_data(query, request_id)
 
-    # GET request: Retrieve traffic data for display
-    cursor.execute("SELECT flow_type, url, data FROM traffic WHERE id = ?", (traffic_id,))
-    traffic = cursor.fetchone()
-    conn.close()
+    if result is None:
+        return jsonify({"message": "Request discarded due to new query."})
 
-    if traffic:
-        flow_type, url, data = traffic
-        # Pretty print the JSON data (optional)
-        try:
-            data_pretty = json.dumps(json.loads(data), indent=4)  # Parse and re-serialize for formatting
-        except json.JSONDecodeError:
-            data_pretty = data  # If it's not JSON, display as is
+    print(f"response \n{result}")
+    return jsonify(result)
 
-        return render_template("view_traffic.html", traffic_id=traffic_id, flow_type=flow_type, url=url,
-                               traffic_data=data_pretty)
-    else:
-        return "Traffic not found"
+
+@app.route("/intercepted-urls")
+def show_intercepted_urls():
+    rows = query_database('SELECT url FROM traffic ORDER BY id;')
+    urls = []
+    for row in rows:
+        url = row[0]
+        # Limit length of url
+        if len(url) > 100:
+            url = url[:100]
+        urls.append(url)
+    # try:
+    #     with open("intercepted_urls.txt", "r") as file:
+    #         urls = file.readlines()
+    # except FileNotFoundError:
+    #     urls = []
+    tree_root = build_tree(urls)
+    tree_output = "\n".join(f"{pre}{node.name}" for pre, _, node in RenderTree(tree_root))
+    print(f"tree output typeshii")
+
+    return jsonify(tree_output)
 
 
 def query_database(query):
@@ -278,8 +301,6 @@ def query_database(query):
     data = cursor.fetchall()
     conn.close()
     return data
-
-    # Handle different content types
 
 
 def decode_content(content_type, data):
@@ -295,18 +316,7 @@ def decode_content(content_type, data):
         else:
             json_string = data.decode('utf-8')
         json_data = json.loads(json_string)
-        # print(type(json_data))  # dict
-        # for key in json_data:
-        #     if json_data[f'{key}']:
-        #         item = json_data[f'{key}']
-        #         if type(item) is list:
-        #             for i in item:
-        #                 print(f'{i}\n')
 
-        json_load = json.loads(json_string)
-        # base64_string = data['bgasy'][1] # Extract the base64 string (second element in the list)
-        # decoded_data = base64.b64decode(base64_string)         # Decode the base64 string
-        # print(decoded_data)
         return json_data
     elif "text/javascript" in content_type or "application/javascript" in content_type:
         print("Handling Javascript data")
@@ -317,21 +327,65 @@ def decode_content(content_type, data):
         return css_content
     elif 'text/html' in content_type:
         print("Handling HTML data")
-        return BeautifulSoup(data, 'html.parser')
+        try:
+            html = BeautifulSoup(data, 'html.parser').prettify()
+        except Exception as e:
+            html = data
+        return html
     elif 'application/x-www-form-urlencoded' in content_type:
         print("Handling URL-encoded data")
-        # Parse URL-encoded data
-        from urllib.parse import parse_qs
-        return parse_qs(data)
+        return parse_qs(data)  # Parse URL-encoded data
     elif 'text/plain' in content_type:
         print("Handling plain text data")
-        # Handle plain text data
         return data.decode('utf-8')
     else:
         print("Not equipped to decode this datatype")
         return data
 
 
+# async function to call the OpenAI API
+async def fetch_data(query, request_id):
+    print(f"fetch_data called : Request ID {request_id}")
+    global current_request_id
+    # Check if this request is outdated
+    if request_id != current_request_id:
+        print(f"Request {request_id} is outdated. Ignoring the response.")
+        return None
+
+    matched_cves = main_rag.retrieve_related_cves(query, main_rag.index, main_rag.descriptions,
+                                                  main_rag.embedding_model)
+    rag_prompt = main_rag.build_rag_prompt(query, matched_cves)
+    response = main_rag.query_llm(rag_prompt)
+
+    # print(f"\n\nresponse\n{response}")
+    return response
+
+
+# Build-A-Tree Workshop
+def build_tree(urls):
+    root = Node("Intercepted URLs")
+    domain_nodes = {}
+
+    for url in urls:
+        parsed = urlparse(url.strip())
+        domain = parsed.netloc
+        path_parts = parsed.path.strip("/").split("/") if parsed.path else []
+
+        if domain not in domain_nodes:
+            domain_nodes[domain] = Node(domain, parent=root)
+
+        parent_node = domain_nodes[domain]
+        for part in path_parts:
+            child = next((node for node in parent_node.children if node.name == part), None)
+            if not child:
+                child = Node(part, parent=parent_node)
+            parent_node = child
+
+    return root
+
+
+
+
 if __name__ == "__main__":
     start_processes()
-    socketio.run(app, host='0.0.0.0', port=flask_port, debug=True, allow_unsafe_werkzeug=True )
+    socketio.run(app, host='0.0.0.0', port=flask_port, debug=True, allow_unsafe_werkzeug=True)

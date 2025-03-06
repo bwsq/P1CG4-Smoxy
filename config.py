@@ -78,6 +78,29 @@ def set_drop_signal(value):
         print(f"An error occurred for drop_signal: {e}")
 
 
+def set_modified(value):
+    try:
+        with open('modified.txt', 'w') as file:
+            value = str(value)
+            file.write(value)
+    except Exception as e:
+        print(f"An error occurred for setting modified content: {e}")
+
+
+def get_modified():
+    try:
+        with open('modified.txt', 'r') as file:
+            drop_signal = file.read()
+    except Exception as e:
+        print(f"An error occurred for getting modified content: {e}")
+    return drop_signal
+
+def nuke_modified():
+    with open('modified.txt', 'w'):
+        pass  # File is cleared upon opening and closing
+
+
+
 def stringToBoolean(string):
     if string == 'True':
         return True

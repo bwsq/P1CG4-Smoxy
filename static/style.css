@@ -7,7 +7,8 @@ body {
     flex-direction: column;
     height: 100vh;
     background-color: #f0fdf4;
-    color: #1b5e20
+    color: #1b5e20;
+    min-height: 100vh; /* TEST */
 }
 
 /* Top Row: Buttons */
@@ -24,6 +25,8 @@ body {
     margin-left: auto;
     font-weight: bold;
     color: #fff;
+    padding-right: 100px;
+    margin-top: -30px;
 }
 
 .top-row {
@@ -33,7 +36,7 @@ body {
     background-color: #1b5e20;
     padding: 10px;
     color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3)
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
 .top-row button {
@@ -45,7 +48,7 @@ body {
     color: white;
     border: none;
     border-radius: 5px;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.2s ease;
 }
 
 .top-row button:hover{
@@ -56,8 +59,11 @@ h2{
     margin-top: 0;
     font-size: 18px;
     color: #1b5e20;
-    border-bottom: 2px solide #81c784;
     padding-bottom: 5px;
+}
+
+#right-title{
+    padding-bottom: 33px;
 }
 
 
@@ -65,7 +71,8 @@ h2{
 .split-screen {
     display: flex;
     flex: 1;
-    height: calc(100vh - 60px); /* Adjust this to account for the top bar height */
+    /*height: calc(100vh - 60px); !* Adjust this to account for the top bar height *!*/
+    /*height: 100%;*/ /* TEST */
 }
 
 /* Left Side: Text Box and Buttons */
@@ -78,13 +85,16 @@ h2{
     border-right: 2px solid #c8e6c9;
     box-shadow: inset 0 2px 4pc rgba(0,0,0,0.1);
     box-sizing: border-box;
+    overflow: auto; /* TEST */
+    min-height: 80vh;
 }
 
 button{
+    font-weight: bold;
     padding: 10px 16px;
     font-size: 14px;
     cursor: pointer;
-    background: linear-gradient(to bottom, #4caf50, #388e3c);
+    background: linear-gradient(to bottom, #399b3c, #198c1e);
     color: white;
     border: none;
     border-radius: 6px;
@@ -92,7 +102,7 @@ button{
 }
 
 button:hover{
-    background: linear-gradient(to bottom, #66bb6a, #43a047);
+    background: linear-gradient(to bottom, #459649, #2f7c32);
     transform: translateY(-2px);
 }
 
@@ -104,14 +114,15 @@ button:hover{
     padding: 10px 16px;
     font-size: 14px;
     cursor: pointer;
-    background: linear-gradient(to bottom, #81c784, #66bb6a);
+    background: linear-gradient(to bottom, #29692c, #226b26);
     border: none;
     border-radius: 5px;
     transition: all 0.3s ease;
+    margin-bottom: 5px;
 }
 
 .button-row button:hover{
-    background: linear-gradient(to bottom, #66bb6a, #43a047);
+    background: linear-gradient(to bottom, #4ea452, #3c8a3f);
     transform: translateY(-2px)
 }
 
@@ -127,49 +138,104 @@ button:hover{
     border-radius: 5px;
 }
 
-#content-box{
+#content-box, #response{
     flex:1;
-    padding: 10px;
-    font-size: 14px;
+    font-size: 1rem; /* Adjust as needed */
     font-family: 'Courier New', monospace;
-    border: 1px solid #81c784;
-    background-color: white;
     resize: none;
-    border-radius: 5px;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+    box-shadow: inset 0 2px 5px rgba(15,222,98,0.2);
     height: 100%;
+    width: 100%;
     box-sizing: border-box;
+    color: #041af1; /*  color for code */
+    background-color: #cfd9cd;
+    padding: 0.5rem; /* Spacing around the code */
+    border-radius: 0.25rem; /* Rounded corners */
+    overflow-x: auto; /* Horizontal scrolling for long lines */
+    font-weight: bold;
+}
+
+#response{
+    margin-top:5px;
+    height: 87%;
 }
 
 
-/* Right Side: Sample Text */
 .right-side {
     flex: 1;
     padding: 15px;
-    background-color: #ffffff;
-    overflow-y: auto;
+    background-color: #c1dcb3;
+    /*overflow-y: auto;*/
     box-sizing: border-box;
+    min-height: 80vh;
+
 }
 
-#sample-text {
-    font-family: monospace;
-    font-size: 14px;
-    white-space: pre-wrap;
-    background-color: #f9fff9;
-    padding: 10px;
-    border: 1px solid #81c784;
-    border-radius: 5px;
-    height: calc(100% - 40px);
-    overflow-y: auto;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-    box-sizing: border-box;
-}
 
 /* For Interception Buttons */
-.intercept-enabled {
-    background: linear-gradient(to bottom, #81c784, #66bb6a);
+.intercept-disabled{
+    background: linear-gradient(to bottom, #3ed345, #329343) !important;;
+
 }
-.intercept-disabled {
+.intercept-enabled {
     background: linear-gradient(to bottom, #ef5350, #d32f2f) /* Color when interception is disabled */
 
 }
+
+/* Handle Disabled AI sector */
+/* Target the disabled AI response textarea */
+.response:disabled {
+    background-color: transparent; /* Remove any background color */
+    color: inherit; /* Inherit text color from parent */
+    border: 1px solid #ccc; /* Maintain standard border */
+    opacity: 1; /* Ensure full opacity */
+}
+
+
+/* Tree Section */
+/* Giving Tree Styles */
+.tree-and-friends {
+    text-align: left; /* Center the button and tree */
+    margin-top: auto; /* Push to the bottom*/
+    padding: 20px;
+    background-color: #f1f8e9; /* Light green background */
+    border-top: 2px solid #c8e6c9; /* Lighter green border */
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    bottom: 0;
+    width: 100%;
+    box-sizing: border-box; /* Include padding and border in width */
+}
+
+#view-tree {
+    padding: 10px 5px;
+    font-size: 14px;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #29692c, #226b26);
+    border: none;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
+}
+
+#view-tree:hover {
+    background: linear-gradient(to bottom, #459649, #2f7c32);
+    transform: translateY(-2px);
+}
+
+#tree-diagram {
+    font-family: monospace;
+    white-space: pre-wrap; /* Preserve formatting and wrap text */
+    background-color: #cfd9cd; /* Light grey background */
+    color: #000000; /* Blue color for the tree */
+    padding: 12px;
+    border-radius: 5px;
+    box-shadow: inset 0 2px 5px rgba(15,222,98,0.2); /* Inner shadow */
+    overflow-x: auto; /* Enable horizontal scrolling if needed */
+    font-size: 1rem;
+    font-weight: bold;
+    margin: 0 1%;
+    /*margin: 0 auto; !* Center the tree horizontally *!*/
+    max-width: 90%; /* Limit the width of the tree diagram */
+}
+
+
