@@ -23,3 +23,4 @@
 
 <p> run the precompute_cve_embedding </p>
 <p> output = cve_descriptions.json and faiss_index.bin </p>
+
