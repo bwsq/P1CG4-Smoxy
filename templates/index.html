@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Interceptor</title>
+    <link rel="stylesheet" href="static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+</head>
+
+
+<body>
+    <!-- Top Row: Buttons -->
+    <div class="top-row">
+        <img id="logo" src="static/smoxy-logo.png" alt="smoxy-logo">
+        <button id="open-browser">Open Browser</button>
+        <button id="intercept-traffic" class="intercept-disabled">Intercept Traffic [{{ interception_enabled }}]</button>
+        <p id="mitm_port">Mitm proxy running on Port <mark>{{ mitm_port }}</mark></p>
+    </div>
+
+    <!-- Split Screen -->
+    <div class="split-screen">
+        <!-- Left Side: Controls and Packet Information -->
+        <div class="left-side">
+            <div class="button-row">
+                <button id="forward-button">Forward</button>
+                <button id="drop-button">Drop</button>
+             </div>
+            <pre id="request_id" placeholder="-"></pre>
+            <textarea id="content-box" placeholder="hmm...."></textarea>
+        </div>
+
+        <!-- Right Side: AI Assistant -->
+        <div class="right-side">
+            <h2 id="right-title">Smoxy Assistant</h2>
+            <textarea id="response" placeholder="Find out more"></textarea>
+        </div>
+    </div>
+
+    <!--Bottom : The giving tree -->
+    <div class="tree-and-friends">
+        <button id="view-tree">View Tree</button>
+        <pre id="tree-diagram"></pre>
+    </div>
+
+    <!-- JavaScript for functionality -->
+    <script>
+        const request_id_pre = document.getElementById("request_id");
+        const content_box = document.getElementById("content-box");
+        const response_box = document.getElementById("response");
+        const view_tree = document.getElementById("view-tree");
+        const tree_diagram = document.getElementById("tree-diagram")
+
+        let id;
+        let original_content;
+        const socket = io();
+
+        // Listen real-time updates from backend
+        socket.on('info', (data) => {
+            console.log('Received update');
+            console.log(data)
+            reset_content_elements()
+            content_box.value = JSON.stringify(data, null, 2); // print pretty
+            original_content = content_box.value;
+            // Access the 'id' field
+            id = data.id;;
+            console.log(id)
+            request_id_pre.value = id
+        })
+
+        document.getElementById("open-browser").addEventListener("click", function() {
+            fetch("/open_browser", {
+                method: "GET",
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log("Browser opened successfully!");
+                } else {
+                    console.error("Failed to open browser.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                // Handle error
+            });
+        });
+
+        const interceptButton = document.getElementById("intercept-traffic");
+        document.getElementById("intercept-traffic").addEventListener("click", function() {
+            fetch("/toggle-intercept", {
+                method: "POST"
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log("Intercept toggled successfully!");
+                    return response.text(); // Extract the response text (state)
+                } else {
+                    console.error("Failed to open browser.");
+                }
+            })
+            .then(state => {
+                reset_content_elements()
+                // Update button appearance based on state
+                let text = "State is " + state
+                console.log(text)
+                if (state === "Enabled") {
+                    interceptButton.classList.remove("intercept-disabled");
+                    interceptButton.classList.add("intercept-enabled");
+                } else {
+                    interceptButton.classList.remove("intercept-enabled");
+                    interceptButton.classList.add("intercept-disabled");
+                }
+                interceptButton.textContent = `Intercept Traffic [${state}]`;
+
+                // update boxes appearance
+                // request_id_pre.value = ''
+                // content_box.value = '' // Empty the box
+                // response_box.value = ''
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        });
+
+
+        document.getElementById('forward-button').addEventListener('click', () => {
+            let edited_contents = content_box.value;
+            if (!(edited_contents === original_content)) {
+                console.log('content has been modified')
+                fetch("/forward", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Modified" : "Yes"
+                    },
+                    body: JSON.stringify(edited_contents),
+                })
+                    .then(response => response.json()) // Parse the JSON response
+                    .then(data => {
+                        reset_content_elements();
+                        console.log('Forwarded new contents')
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                    });
+            } else {
+                console.log('content is untouched')
+                fetch("/forward", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Modified" : "No"
+                    },
+                    body: JSON.stringify(original_content)
+                })
+                    .then(response => response.json()) // Parse the JSON response
+                    .then(data => {
+                        reset_content_elements();
+                        console.log('Forwarded original contents')
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                    });
+            }
+        });
+
+        document.getElementById('drop-button').addEventListener('click', () => {
+            fetch("/drop", {
+                method: "GET",
+            })
+            .then(response => {
+                reset_content_elements();
+                if (response.ok) {
+                    console.log("Dropped successfully!");
+                } else {
+                    console.error("Dropped failed.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        });
+
+        let currentRequestController = null;
+        // Function to handle API requests
+        function searchTrafficPackage(query, request_id) {
+            // If there's an ongoing request, abort it
+            if (currentRequestController) {
+                currentRequestController.abort();
+            }
+
+            // Create a new AbortController instance for the new request
+            currentRequestController = new AbortController();
+            const signal = currentRequestController.signal;
+
+            // Send the API request to the backend
+            fetch(`/search?query=${query}&request_id=${request_id}`, { signal: signal })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    console.log(typeof data);
+                    let parsed_data = parseText(data)
+                    console.log(parsed_data.summary)
+                    console.log(parsed_data.flag)
+                    console.log(parsed_data.reason)
+                    console.log(parsed_data.remediation)
+                    console.log(parsed_data.payload)
+
+                    let screenprint = '|| Summary\n' + parsed_data.summary + '\n\n|| Flag\n' + parsed_data.flag + '\n\n|| Reason\n' + parsed_data.reason
+                    let flag = parsed_data.flag
+                    if (!(flag === '[Benign]' || flag === '[benign]')) {
+                        screenprint += '\n\n|| Remediation Tips\n' + parsed_data.remediation + '\n\n|| Payload you can try\n' + parsed_data.payload
+                    }
+
+                    response_box.value = screenprint;
+                })
+                .catch(error => {
+                    if (error.name === 'AbortError') {
+                        console.log(error)
+                        console.log('Request was aborted due to a new search request.');
+                    } else {
+                        console.error('Error fetching data:', error);
+                    }
+                });
+        }
+
+        // Event listener for Openai box input
+        document.getElementById('response').addEventListener('click', (e) => {
+             let query = content_box.value
+             if (!(query === ''))
+                response_box.disabled = true;
+                response_box.value = '\n\n   *   (\\__/)   *\n' +
+                    '       (•ㅅ•)      Generating\n' +
+                    '    ＿ノヽ ノ＼＿      response.....\n' +
+                    ' /　 / ⌒Ｙ⌒ Ｙ  ヽ     \n' +
+                    '( 　(三ヽ人　 /　  |\n' +
+                    '|　ﾉ⌒＼ ￣￣ヽ   ノ\n' +
+                    'ヽ＿＿＿＞､＿_／\n' +
+                    '       ｜( 王 ﾉ〈   (\\__/)\n' +
+                    '       /ﾐ`ー―彡\\    (•ㅅ•)\n' +
+                    '      / ╰    ╯ \\ /    \\>\n ' +
+                    '--------------------------';
+                console.log('Making an OpenAI call backend..')
+                query = content_box.value
+                searchTrafficPackage(query, id);
+        });
+
+        document.getElementById("view-tree").addEventListener("click", function() {
+            fetch(`/intercepted-urls`,)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    tree_diagram.innerText = data;
+                })
+                .catch(error => {
+                    console.error('Error generating tree:', error);
+                });
+        });
+
+
+        function reset_content_elements(){
+            response_box.disabled = false;
+            request_id_pre.value = ''
+            content_box.value = ''
+            response_box.value = ''
+        }
+
+        // Function to parse the text and extract fields
+        function parseText(text) {
+            // Remove the quotes from the initial part of the text
+            let cleanText = text.replace(/\"/g, '');
+
+            // Extract summary
+            let summary = cleanText.split('##summary##')[0].trim();
+
+            // Extract flag_text before ##flag##
+            let flagText = cleanText.split('##flag##')[0].trim();
+
+            // Determine the flag based on the flag_text
+            let flag;
+            if (flagText.includes('benign') || flagText.includes('Benign')) {
+                flag = '[Benign]';
+            } else if (flagText.includes('suspicious') || flagText.includes('Suspicious')) {
+                flag = '[Suspicious]';
+            } else if (flagText.includes('malicious') || flagText.includes('Malicious')) {
+                flag = '[Malicious]';
+            }
+
+            // Extract reason before ##reason##
+            let reason = cleanText.split('##reason##')[0].split('##flag##')[1].trim();
+
+            // Extract remediation before ##remediation##
+            let remediation = cleanText.split('##remediation##')[0].split('##reason##')[1].trim();
+
+            // Extract payload before ##payload##
+            let payload = cleanText.split('##payload##')[0].split('##remediation##')[1].trim();
+
+            // Return the parsed data
+            return {
+                summary: summary,
+                flag: flag,
+                reason: reason,
+                remediation: remediation,
+                payload: payload
+            };
+        }
+    </script>
+</body>
+</html>
