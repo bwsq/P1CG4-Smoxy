@@ -1,0 +1,241 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f0fdf4;
+    color: #1b5e20;
+    min-height: 100vh; /* TEST */
+}
+
+/* Top Row: Buttons */
+
+#logo {
+    max-height : 100px;
+    width: 120px;
+    align-self: flex-start;
+    margin-right: 10px;
+}
+
+#mitm_port {
+    align-self: center;
+    margin-left: auto;
+    font-weight: bold;
+    color: #fff;
+    padding-right: 100px;
+    margin-top: -30px;
+}
+
+.top-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: #1b5e20;
+    padding: 10px;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.top-row button {
+    padding: 10px 20px;
+    margin: 0 5px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #66bb6a;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.top-row button:hover{
+    background-color: #388e3c
+}
+
+h2{
+    margin-top: 0;
+    font-size: 18px;
+    color: #1b5e20;
+    padding-bottom: 5px;
+}
+
+#right-title{
+    padding-bottom: 33px;
+}
+
+
+/* Split Screen Layout */
+.split-screen {
+    display: flex;
+    flex: 1;
+    /*height: calc(100vh - 60px); !* Adjust this to account for the top bar height *!*/
+    /*height: 100%;*/ /* TEST */
+}
+
+/* Left Side: Text Box and Buttons */
+.left-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    background-color: #f1f8e9;
+    border-right: 2px solid #c8e6c9;
+    box-shadow: inset 0 2px 4pc rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    overflow: auto; /* TEST */
+    min-height: 80vh;
+}
+
+button{
+    font-weight: bold;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #399b3c, #198c1e);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+button:hover{
+    background: linear-gradient(to bottom, #459649, #2f7c32);
+    transform: translateY(-2px);
+}
+
+.button-row {
+    margin-bottom: 10px;
+}
+
+.button-row button {
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #29692c, #226b26);
+    border: none;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
+}
+
+.button-row button:hover{
+    background: linear-gradient(to bottom, #4ea452, #3c8a3f);
+    transform: translateY(-2px)
+}
+
+#text-box {
+    height: 620px;
+    width:  auto; /*520px;*/
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    font-family: monospace;
+    border: 1px solid #a5d6a7;
+    resize: none;
+    border-radius: 5px;
+}
+
+#content-box, #response{
+    flex:1;
+    font-size: 1rem; /* Adjust as needed */
+    font-family: 'Courier New', monospace;
+    resize: none;
+    box-shadow: inset 0 2px 5px rgba(15,222,98,0.2);
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    color: #041af1; /*  color for code */
+    background-color: #cfd9cd;
+    padding: 0.5rem; /* Spacing around the code */
+    border-radius: 0.25rem; /* Rounded corners */
+    overflow-x: auto; /* Horizontal scrolling for long lines */
+    font-weight: bold;
+}
+
+#response{
+    margin-top:5px;
+    height: 87%;
+}
+
+
+.right-side {
+    flex: 1;
+    padding: 15px;
+    background-color: #c1dcb3;
+    /*overflow-y: auto;*/
+    box-sizing: border-box;
+    min-height: 80vh;
+
+}
+
+
+/* For Interception Buttons */
+.intercept-disabled{
+    background: linear-gradient(to bottom, #3ed345, #329343) !important;;
+
+}
+.intercept-enabled {
+    background: linear-gradient(to bottom, #ef5350, #d32f2f) /* Color when interception is disabled */
+
+}
+
+/* Handle Disabled AI sector */
+/* Target the disabled AI response textarea */
+.response:disabled {
+    background-color: transparent; /* Remove any background color */
+    color: inherit; /* Inherit text color from parent */
+    border: 1px solid #ccc; /* Maintain standard border */
+    opacity: 1; /* Ensure full opacity */
+}
+
+
+/* Tree Section */
+/* Giving Tree Styles */
+.tree-and-friends {
+    text-align: left; /* Center the button and tree */
+    margin-top: auto; /* Push to the bottom*/
+    padding: 20px;
+    background-color: #f1f8e9; /* Light green background */
+    border-top: 2px solid #c8e6c9; /* Lighter green border */
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    bottom: 0;
+    width: 100%;
+    box-sizing: border-box; /* Include padding and border in width */
+}
+
+#view-tree {
+    padding: 10px 5px;
+    font-size: 14px;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #29692c, #226b26);
+    border: none;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
+}
+
+#view-tree:hover {
+    background: linear-gradient(to bottom, #459649, #2f7c32);
+    transform: translateY(-2px);
+}
+
+#tree-diagram {
+    font-family: monospace;
+    white-space: pre-wrap; /* Preserve formatting and wrap text */
+    background-color: #cfd9cd; /* Light grey background */
+    color: #000000; /* Blue color for the tree */
+    padding: 12px;
+    border-radius: 5px;
+    box-shadow: inset 0 2px 5px rgba(15,222,98,0.2); /* Inner shadow */
+    overflow-x: auto; /* Enable horizontal scrolling if needed */
+    font-size: 1rem;
+    font-weight: bold;
+    margin: 0 1%;
+    /*margin: 0 auto; !* Center the tree horizontally *!*/
+    max-width: 90%; /* Limit the width of the tree diagram */
+}
+
+
